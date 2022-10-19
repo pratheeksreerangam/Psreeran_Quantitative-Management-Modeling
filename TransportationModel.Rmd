@@ -1,0 +1,159 @@
+---
+title: "Transportation model"
+author: "Pratheek sreerangam"
+date: "2022-10-17"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##set transportation matrix
+
+```{r}
+library(lpSolve)
+library(lpSolveAPI)
+c1<- matrix(c(22,14,30,600,100,
+                    16,20,24,625,120,
+                    80,60,70,"-","-"),ncol=5,byrow= TRUE)
+colnames(c1)<- c("Warehouse1","Warehouse 2","Warehouse 3","Production cost","Production Capacity")
+rownames(c1)<-c("PlantA","Plant B"," Monthly Demand")
+c1
+```
+
+
+Minimizing the TC is the goal function.
+Min T C = 622x11 + 614x12 + 630x13 + 0x14 + 641x21 + 645x22 + 649x23 + 0x24
+subject to the aforementioned limitations Supply
+X11 + X12 + X13 + X14 <= 100 X21 + X22 + X23 + X24 <= 120
+subject to the limitations listed : Demand
+X11 + X21 >= 80 X12 + X22 >= 60 X13 + X23 >= 70 X14 + X24 >= 10
+Non-Negativity Constraints
+Xij >= 0
+Where i = 1,2 and j= 1,2,3,4 #The capacity = 220 and Demand = 210. A "Dummy" row will be added for Warehouse_4 ..
+
+```{r}
+trans.c1<- matrix(c(622,614,630,0,
+                 641,645,649,0),ncol =4, byrow=TRUE)
+trans.c1
+```
+
+##Set up constraints r.h.s(supply side)
+```{r}
+row.signs<- rep("<=",2)
+row.rhs<- c(100,120)
+```
+
+#Supply function is not permitted to exceed the units demanded side.
+```{r}
+col.signs<- rep(">=",4)
+col.rhs<- c(80,60,70,10)
+```
+
+##demand function can be greater
+
+```{r}
+library(lpSolve)
+lptrans<-lp.transport(trans.c1,"min",row.signs,row.rhs,col.signs,col.rhs)
+lptrans$solution
+```
+80 AEDs in Plant 2 - Warehouse 1 
+60 in Plant 1 - Warehouse 2 
+40 AEDs in Plant 1 - Warehouse 3
+30 AEDs in Plant 2 - Warehouse 3 
+To reduce the overall cost of manufacturing and delivery, the aforementioned should be produced in each factory and distributed to the three wholesaler warehouses.
+
+##Value of nvariables
+```{r}
+lptrans$objval
+```
+The defibrilators' total manufacturing and delivery expenses are $132,790
+
+```{r}
+lptrans$duals
+```
+
+#2. Formulate the dual of this transportation problem  - Since the primary goal was to reduce transportation costs, the secondary goal would be to increase value added (VA). The dual's variables are going to be u and v.
+
+```{r}
+c2<-matrix(c(622,614,630,100,"u1",
+                 641,645,649,120,"u2",
+                 80,60,70,220,"-","v1","v2","v3","-","-"),ncol = 5,nrow=4,byrow=TRUE)
+colnames(c2) <- c("Warehouse_1", "Warehouse_2","Warehouse_3","Production Capacity","Supply(Dual)")
+rownames(c2) <- c("Plant_A","Plant_B","Demand","Demand(Dual)")
+```
+#Objective function
+```{r}
+f.obj <- c(100,120,80,60,70)
+```
+
+#transposed from the constraints matrix in the primal
+```{r}
+f.con <- matrix(c(1,0,1,0,0,
+1,0,0,1,0,
+1,0,0,0,1,
+0,1,1,0,0,
+0,1,0,1,0,
+0,1,0,0,1), nrow = 6, byrow = TRUE)
+f.dir <- c("<=",
+"<=",
+"<=",
+"<=",
+"<=",
+"<=")
+f.rhs <- c(622,614,630,641,645,649)
+lp("max",f.obj,f.con,f.dir,f.rhs)
+```
+## Success: the objective function is 139120
+
+```{r}
+lp("max",f.obj,f.con,f.dir,f.rhs)$solution
+```
+Z=139,120 and variables are:
+u1 = 614 u2 = 633 v1 = 8 v3 = 16
+
+#3.Make an economic interpretation of the dual 
+
+Financial Analysis of the Dual Given the foregoing, the minimum Z(Primal) = 132790 and the maximum Z(Dual) = 139120. 
+We realized that we shouldn't be shipping to all three Warehouses from Plants (A/B). From where we should be shipping:
+
+60X12 which is 60 Units from Plant A to Warehouse 2. 
+40X13 which is 40 Units from Plant A to Warehouse
+3. 80X13 which is 60 Units from Plant B to Warehouse 1. 
+30X13 which is 60 Units from Plant B to Warehouse 3. 
+We'll maximize the earnings from each distribution to the extent of the available resources.
+
+
+```{r}
+row.rhs1 <- c(101,120)
+row.signs1 <- rep("<=",2)
+col.rhs1 <- c(80,60,70,10)
+col.signs1 <- rep(">=",4)
+row.rhs2 <- c(100,121)
+row.signs2 <- rep("<=",2)
+col.rhs2 <- c(80,60,70,10)
+col.signs2 <- rep(">=",4)
+lp.transport(trans.c1,"min",row.signs,row.rhs,col.signs,col.rhs)
+```
+
+```{r}
+lp.transport(trans.c1,"min",row.signs1,row.rhs1,col.signs1,col.rhs1)
+```
+
+```{r}
+lp.transport(trans.c1,"min",row.signs2,row.rhs2,col.signs2,col.rhs2)
+```
+
+Here, we are watching the number decrease by 19 by taking the minimum of the particular function. This shows that the shadow price is 19, which was calculated by adding 1 to each of the plants and the primordial. There isn't a shadow price for Plant B. v1 is a dual variable with the condition that Marginal Revenue Equals Marginal Cost. The formula was
+
+```{r}
+lp("max", f.obj,f.con, f.dir,f.rhs)$solution
+
+```
+
+Warehouse1= Plant1 + 621 i.e. MR1 >= MC1 Marginal Revenue i.e. The revenue generated for each
