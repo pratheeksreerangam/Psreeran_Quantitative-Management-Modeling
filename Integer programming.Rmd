@@ -1,0 +1,47 @@
+---
+title: "Integer programming"
+author: "Pratheek Sreerangam"
+date: "2022-11-20"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r comment=NA }
+library(lpSolve)
+library(lpSolveAPI)
+y <- read.lp("ass11.lp")
+y
+```
+
+Solving the problem to get objective function. 
+```{r}
+solve(y)
+get.objective(y)
+```
+#Our Objective function is: 25675.
+#Let's examine the factors to determine what this means.
+
+```{r}
+get.variables(y)
+```
+
+
+### What it illustrates is:
+#Y1 = Sunday and Monday are off for shift 1 = 2
+#Y2 = Monday and Tuesday are off for shift 2 = 4
+#Y3 = Tuesday and Wednesday are off for shift 3= 5
+#Y4 = Wednesday and Thursday are off for shift 4 = 0
+#Y5 = Thursday and Friday are off for shift 5 = 8
+#Y6 = Friday and Saturday are off for shift 6 = 1
+#Y7 = Saturday and Sunday are off for shift 7 = 13
+
+### Our objective function = 2x775 + 4x800 + 5x800 + 8x800 + 1X775 + 13x750 = 25675.
+### The least amount we must spend on wages is $2675.
+
+
